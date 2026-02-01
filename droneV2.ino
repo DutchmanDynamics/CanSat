@@ -1,4 +1,4 @@
-  #include <SPI.h>
+#include <SPI.h>
 #include <RH_RF95.h>
 #include <Adafruit_BMP3XX.h>
 #include <Adafruit_Sensor.h>
@@ -110,7 +110,7 @@ void setup() {
   msp.begin(115200)
 
   //msp data array init
-  for (uint8_t i = 0; i < 8; i++) {
+  for (int i = 0; i < 16; i++) {
     data[i] = 1500;
   }
   data[2] = 1000;
@@ -180,7 +180,7 @@ void parseMSP(uint8_t readChar) {
       type = CHECKSUM;
     }
   break;
-  case CHECKSUM:checksum == readChar ? parsePacket(cmd) : while(1);checksum = 0;type = IDLE; 
+  case CHECKSUM: checksum == readChar ? parsePacket(cmd);checksum = 0;type = IDLE; 
   }
 
 
@@ -204,7 +204,7 @@ void mspReadGyro() {
 }
 
 void mspReadNavStat() {
-  mspwrite(NAV_STAT, nullptr, 0);
+  mspWrite(NAV_STAT, nullptr, 0);
   delay(10);
   while (msp.available()) {
     parseMSP(msp.read());
@@ -212,7 +212,7 @@ void mspReadNavStat() {
 }
 
 void mspReadVoltage() {
-  mspwrite(BATT_GET, nullptr, 0);
+  mspWrite(BATT_GET, nullptr, 0);
   delay(10);
   while (msp.available()) {
     parseMSP(msp.read());
@@ -224,7 +224,7 @@ bool missionCompleted() {
   while (msp.available()) {
     parseMSP(msp.read());
   }
-  return (navstate == 0);
+  return (navState == 0);
 }
 //modes
 
@@ -243,7 +243,7 @@ void launchedMode(float h, float a) {
 
 void rtwpMode() {
   data[5] = 2000; //ch 6, set to navigate mission
-  if (missionComplete()) {
+  if (missionCompleted()) {
     status = 3;
   }
 }
@@ -252,7 +252,7 @@ void landingMode() {
   landing = true;
 }
 
-void sendRadio(height, pressure, temp, altitudeGPS, latitude, longitude, fix, numSat, battVolt, status) {
+void sendRadio(float height, float pressure, float temp, float altitudeGPS, float latitude, float longitude, int fix, int numSat, float battVolt, int status) {
   char message[128];
   sprintf(message, "%.2f;%.2f;%.1f;%.1f;%.7f;%.7f;%i;%i;%.2f;%i", height, pressure, temp, altitudeGPS, latitude, longitude, fix, numSat, battVolt, status);
 
@@ -263,6 +263,7 @@ void sendRadio(height, pressure, temp, altitudeGPS, latitude, longitude, fix, nu
 
 
 void loop() {
+  // put your main code here, to run repeatedly:
   //needed sensor reading
   float temp = bmp.temperature;
   float pressure = bmp.pressure / 100.0;   //hPa
@@ -297,8 +298,7 @@ void loop() {
     sendRadio(height, pressure, temp, altitudeGPS, latitude, longitude, fix, numSat, battVolt, status);
     lastRadio = now;
   }
-  
-  //watchdog
+
   Watchdog.reset();
 
 }
